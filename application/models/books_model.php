@@ -95,16 +95,19 @@ class books_model extends CI_Model {
                 if ($count == 1) {
                     $garr = array('genre_id', $genre_id);
                     $this->db->delete('genres', $garr);
+                    $flag = true;
 
                 }
             }
-            $ret = $ret + 2;
+            if ($flag = true) {
+                $ret = $ret + 2;
+            }
         }
         $arr = array('id' => $id);
         $this->db->delete('books', $arr);
-        $arr = array('book_id' => $id);
-        $this->db->delete('book_genres', $arr);
-        $this->db->delete('book_authors', $arr);
+//        $arr = array('book_id' => $id);
+//        $this->db->delete('book_genres', $arr);
+//        $this->db->delete('book_authors', $arr);
 
         return ( $ret);
     }
@@ -114,7 +117,12 @@ class books_model extends CI_Model {
     public function save_book ($genre, $author, $book, $year) {
     $check = $this->chek_received_data($genre, $author, $book, $year);
     if ($check == 'ok'){
-        $genre = $this->normal_genre($genre);
+        $g = array();
+        foreach ($genre as $elem){
+            $elem = $this->normal_genre($elem);
+            array_push($g, $elem);
+        }
+        $genre = $g;
         $author = $this->normal_name($author);
         $book = $this->normal_book($book);
 
@@ -141,7 +149,14 @@ class books_model extends CI_Model {
                 return ("не все поля заполнены");
             }
 
-            if (!is_string($genre) or !is_string($author) or !is_string($book) or !is_int($year)) {
+            foreach ($genre as $string){
+                if (!is_string($string)) {
+                    return ("не верный формат введенных данных");
+                }
+            }
+
+
+            if (!is_string($author) or !is_string($book) or !is_int($year)) {
                 return ("не верный формат введенных данных");
             }
 
@@ -177,6 +192,7 @@ class books_model extends CI_Model {
 
             //проверяем нет ли в базе такого жанра
 
+            $g_ids = array();
             foreach ($genre as $g) {
                 $this->db->select('genre_id');
                 $this->db->from('genres');
@@ -190,6 +206,7 @@ class books_model extends CI_Model {
                     array_push($g_ids, false);
                 }
             }
+            array_push($cbr, $g_ids);
 
             //проверяем нет ли в базе такого автора
 
@@ -208,24 +225,30 @@ class books_model extends CI_Model {
             return ($cbr);
         }
 
-    private    function add_genre($genre, $cbr){
+    private    function add_genre($genre, $cbr)
+    {
         //Функция вставляет в базу значение genre если в массиве CBR не получает уже существующий id этого жанра
         //Возвращает ID вставленной строки, или ID из CBR.
-            if (!$cbr[1]){
-                $data = array('genre' => $genre);
+        $i = 0;
+        $result = array();
+        foreach ($cbr[1] as $g) {
+            if (!$g) {
+                $data = array('genre' => $genre[$i]);
                 $this->db->insert('genres', $data);
                 $this->db->select('genre_id');
                 $this->db->from('genres');
-                $this->db->where('genre',$genre);
+                $this->db->where('genre', $genre[$i]);
                 $query = $this->db->get();
                 $row = $query->row();
-                $result = $row->genre_id;
+                $id = $row->genre_id;
+                array_push($result, $id);
 
-                return ($result);
+            } else {
+                array_push($result, $g);
             }
-            else {
-                return ($cbr[1]);
-            }
+            $i++;
+        }
+        return ($result);
     }
 
     private    function add_author($author, $cbr){
@@ -260,12 +283,15 @@ class books_model extends CI_Model {
         $row = $query->row();
         $book_id = $row->id;
 
-        $data = array(
-            'book_id' => $book_id,
-            'genre_id' => $ids[0]
-        );
+        foreach ($ids[0] as $elem) {
 
-        $this->db->insert('book_genres', $data);
+            $data = array(
+                'book_id' => $book_id,
+                'genre_id' => $elem
+            );
+
+            $this->db->insert('book_genres', $data);
+        }
 
         $data = array(
             'book_id' => $book_id,

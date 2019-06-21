@@ -20,11 +20,13 @@ class Pages extends CI_Controller {
         }
 
         $data['title'] = ucfirst($page); // Сделать первую букву заглавной
-        $data['authors'] = $this->books_model->get_authors();
+        //$data['authors'] = $this->books_model->get_authors();
         $data['lib'] = $this->books_model->get_lib();
 
 
-        $data['compare'] = $this->books_model->save_book ('мистика', 'Владимир серкин', 'Хохот шамана', 2007);
+
+        $genres = array('фантастика', 'роман');
+        $data['compare'] = $this->books_model->del_book (2);
 
 
         $this->load->view('templates/header');
