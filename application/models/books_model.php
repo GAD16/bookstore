@@ -37,6 +37,121 @@ class books_model extends CI_Model {
 
     }
 
+    public function upd_book (array $genres, string $author, string $book, int $year, int $id){
+
+
+
+
+        $this->db->select('genre_id');
+        $this->db->from('book_genres');
+        $this->db->where('book_id', $id);
+        $query = $this->db->get();
+
+
+//
+
+        $book = $row->name;
+
+
+    }
+
+    private function upd_genres ($genres, $id) {
+        //функция проверяет наличие жанров в базе, добавляет их в базу если нужно
+        //удаляет жанры которые больше нигде не используются
+        //обновляет ссылочные таблицы, добавляет в них новые записи если нужно, удаляет неиспользуемые
+
+        $genres = $this->normal_genre($genres);
+        $this->db->query("SELECT genres.genre_id, genres.genre
+                          FROM genres
+                          JOIN book_genres ON genres.genre_id = book_genres.genre_id
+                          WHERE book_id = $id");
+        $query = $this->db->get();
+        $old_ids = $query->result_array();
+        //     foreach ($query->result_array() as $item) {
+        //        $old_ids = [$item['genre_id']] => $item ['genre'];
+        //     }
+        foreach ($old_ids as $key => $old_id) {
+            foreach ($genres as $genre) {
+                if ($genre == $old_id['genre']) {
+                    $delKeys[] = $key;
+                }
+            }
+        }
+
+        foreach ($delKeys as $key){
+            array_splice($genres, $key,1);
+        }
+
+        foreach ($delKeys as $key){
+            array_splice($old_ids, $key,1);
+        }
+
+        foreach ($old_ids as $old_id) {
+
+                $this->db->from('book_genres');
+                $this->db->where('genre_id', $old_id['genre_id']);
+                $query = $this->db->get();
+                $result_arr = $query->result_array();
+                $count = (count($result_arr));
+                if ($count == 1) {
+                    $garr = array('genre_id' => $old_id['genre_id']);
+                    $this->db->delete('genres', $garr);
+                }
+
+        }
+        foreach ($genres as $key => $genre){
+            $this->db->select('genre_id');
+            $this->db->from('genres');
+            $this->db->where('genre', $genre);
+            $query = $this->db->get();
+            $result = $query->row;
+            if ($result){
+                $genres = array_reverse($genres, true);
+                $genres[$result['genre_id']] = $genres[$key];
+                $genres = array_reverse($genres, true);
+                unset ($genres[$key]);
+            }
+            else {
+                $data = array('genre' => $genres[$key]);
+                $this->db->insert('genres', $data);
+                $this->db->select('genre_id');
+                $this->db->from('genres');
+                $this->db->where('genre', $genre[$i]);
+                $query = $this->db->get();
+                $result = $query->row;
+                $genres = array_reverse($genres, true);
+                $genres[$result['genre_id']] = $genres[$key];
+                $genres = array_reverse($genres, true);
+                unset ($genres[$key]);
+            }
+        }
+        foreach ($old_ids as $key => $old_id) {
+            if (isset($genres[0])) {
+                $data = array('genre_id' => $genres[0])
+                $this->db->where('genre_id', $old_id['genre_id'])
+                $this->db->update('book_genres', $data);
+                unset($genres[0]);
+            }
+            else {
+                $data = array('genre_id' => $old_id['genre_id']);
+                $this->db->delete('book_genres', $data);
+            }
+        }
+        if ($genres) {
+            foreach ($genres as $key => $genre) {
+                $this->db->insert($genre);
+            }
+        }
+
+    }
+
+    private function upd_author ($author, $id) {
+
+
+    }
+
+
+
     public function del_book ($id){
 
         //Удаляет книгу и записи о ней из ссылочных таблиц.
@@ -66,6 +181,7 @@ class books_model extends CI_Model {
         $row = $query->row();
         $author_id = $row->author_id;
 
+
         if ($author_id) {
             $this->db->from('book_authors');
             $this->db->where('author_id', $author_id);
@@ -73,7 +189,7 @@ class books_model extends CI_Model {
             $result = $query->result_array();
             $count = (count($result));
             if ($count == 1) {
-                $aarr = array('author_id', $author_id);
+                $aarr = array('author_id' => $author_id);
                 $this->db->delete('authors', $aarr);
                 $ret++;
             }
@@ -83,17 +199,18 @@ class books_model extends CI_Model {
         $this->db->where('book_id', $id);
         $query = $this->db->get();
         $result = $query->result_array();
-        $genre_ids = $result->genre_id;
 
-        if ($genre_ids) {
-            foreach ($genre_ids as $genre_id) {
+
+        if ($result) {
+            foreach ($result as $row) {
+
                 $this->db->from('book_genres');
-                $this->db->where('genre_id', $genre_id);
+                $this->db->where('genre_id', $row['genre_id']);
                 $query = $this->db->get();
-                $result = $query->result_array();
-                $count = (count($result));
+                $result_arr = $query->result_array();
+                $count = (count($result_arr));
                 if ($count == 1) {
-                    $garr = array('genre_id', $genre_id);
+                    $garr = array('genre_id' => $row['genre_id']);
                     $this->db->delete('genres', $garr);
                     $flag = true;
 
@@ -105,9 +222,7 @@ class books_model extends CI_Model {
         }
         $arr = array('id' => $id);
         $this->db->delete('books', $arr);
-//        $arr = array('book_id' => $id);
-//        $this->db->delete('book_genres', $arr);
-//        $this->db->delete('book_authors', $arr);
+
 
         return ( $ret);
     }
@@ -115,6 +230,11 @@ class books_model extends CI_Model {
 
     //добавляет запись в базу, если такой книги еще нет. Возвращает ID новой или уже существующей
     public function save_book ($genre, $author, $book, $year) {
+
+    if (!isset($genre) or !isset($author) or !isset($book) or !isset($year)) {
+            return ("не все поля заполнены");
+        }
+
     $check = $this->chek_received_data($genre, $author, $book, $year);
     if ($check == 'ok'){
         $g = array();
@@ -145,9 +265,7 @@ class books_model extends CI_Model {
     }
 
     private function chek_received_data ($genre, $author, $book, $year)  {
-            if (!isset($genre) or !isset($author) or !isset($book) or !isset($year)) {
-                return ("не все поля заполнены");
-            }
+
 
             foreach ($genre as $string){
                 if (!is_string($string)) {
