@@ -37,56 +37,129 @@ class books_model extends CI_Model {
 
     }
 
-    public function upd_book (array $genres, string $author, string $book, int $year, int $id){
+    public function upd_book ($genres, $author, $book, $year, $id){
+        //обновляет записи во всех таблицах
+        //если нет ID или нет всех данных возвращает 0
+        //при обновлении только жанров возвратит 1
+        //при обновлении только авторов возвратит 2
+        //при обновлении только книги или (и) года возвратит 4
+        // при обновлении нескольких параметров возвратит суммарный результат 1-7
 
-
-
-
-        $this->db->select('genre_id');
-        $this->db->from('book_genres');
-        $this->db->where('book_id', $id);
-        $query = $this->db->get();
-
-
-//
-
-        $book = $row->name;
-
-
+    if (!$id) {
+        return (0);
+    }
+    $chek = $this->chek_received_data($genres, $author, $book, $year);
+    if (!($chek == 'ok')) {
+        return ($chek);
+    }
+    if ($genres) {
+        $res = $this->upd_genres($genres, $id);
+    }
+    if ($author) {
+        $res = $res + $this->upd_author($author, $id);
+    }
+    if (!$book and !$year) {
+        return ($res);
+    }
+    else {
+        if ($book) {
+            $book = $this->normal_book($book);
+            $data = array('name' => $book);
+            $this->db->where('id', $id);
+            $this->db->update('books', $data);
+        }
+        if ($year) {
+            $data = array('year' => $year);
+            $this->db->where('id', $id);
+            $this->db->update('books', $data);
+        }
+        return ($res + 4);
+    }
     }
 
     private function upd_genres ($genres, $id) {
         //функция проверяет наличие жанров в базе, добавляет их в базу если нужно
         //удаляет жанры которые больше нигде не используются
         //обновляет ссылочные таблицы, добавляет в них новые записи если нужно, удаляет неиспользуемые
-
+        //возвращает 0 если полученые жанры полностью совпали с данными базы
+        //возвращает 1 если хоть один жанр был обновлен
+        if(!$genres or !$id){
+            return (0);
+        }
         $genres = $this->normal_genre($genres);
-        $this->db->query("SELECT genres.genre_id, genres.genre
+        $query = $this->db->query("SELECT genres.genre_id, genres.genre
                           FROM genres
                           JOIN book_genres ON genres.genre_id = book_genres.genre_id
-                          WHERE book_id = $id");
-        $query = $this->db->get();
+                          WHERE book_genres.book_id = $id");
+
         $old_ids = $query->result_array();
         //     foreach ($query->result_array() as $item) {
         //        $old_ids = [$item['genre_id']] => $item ['genre'];
         //     }
-        foreach ($old_ids as $key => $old_id) {
-            foreach ($genres as $genre) {
+        $oldDelKeys = array();
+        $newDelKeys = array();
+        foreach ($old_ids as $oldkey => $old_id) {
+            foreach ($genres as $newkey => $genre) {
                 if ($genre == $old_id['genre']) {
-                    $delKeys[] = $key;
+                    $oldDelKeys [] = $oldkey;
+                    $newDelKeys [] = $newkey;
                 }
+
             }
         }
 
-        foreach ($delKeys as $key){
+        foreach ($newDelKeys as $key){
             array_splice($genres, $key,1);
         }
 
-        foreach ($delKeys as $key){
+        if (!$genres){
+            return (0);
+        }
+
+        foreach ($oldDelKeys as $key){
             array_splice($old_ids, $key,1);
         }
 
-        foreach ($old_ids as $old_id) {
+
+        foreach ($genres as $key => $genre){
+            $this->db->select('genre_id');
+            $this->db->from('genres');
+            $this->db->where('genre', $genre);
+            $query = $this->db->get();
+            $row = $query->row();
+            $result = $row->genre_id;
+            if ($result){
+                $genres = array_reverse($genres, true);
+                $genres [$result] = $genres[$key];
+                $genres = array_reverse($genres, true);
+                unset ($genres[$key]);
+            }
+            else {
+                if ($old_ids[0]) {
+                    $data = array('genre' => $genre);
+                    $this->db->where('genre_id', $old_ids[0]['genre_id']);
+                    $this->db->update('genres', $data);
+                    unset ($old_ids[0]);
+                    unset ($genres[$key]);
+                }
+                else {
+                    $data = array('genre' => $genre);
+                    $this->db->insert('genres', $data);
+                    $this->db->select('genre_id');
+                    $this->db->from('genres');
+                    $this->db->where('genre', $genre);
+                    $query = $this->db->get();
+                    $row = $query->row();
+                    $result = $row->genre_id;
+                    $genres = array_reverse($genres, true);
+                    $genres [$result] = $genres[$key];
+                    $genres = array_reverse($genres, true);
+                    unset ($genres[$key]);
+                }
+            }
+        }
+        if ($old_ids) {
+            foreach ($old_ids as $old_id) {
 
                 $this->db->from('book_genres');
                 $this->db->where('genre_id', $old_id['genre_id']);
@@ -98,56 +171,72 @@ class books_model extends CI_Model {
                     $this->db->delete('genres', $garr);
                 }
 
-        }
-        foreach ($genres as $key => $genre){
-            $this->db->select('genre_id');
-            $this->db->from('genres');
-            $this->db->where('genre', $genre);
-            $query = $this->db->get();
-            $result = $query->row;
-            if ($result){
-                $genres = array_reverse($genres, true);
-                $genres[$result['genre_id']] = $genres[$key];
-                $genres = array_reverse($genres, true);
-                unset ($genres[$key]);
-            }
-            else {
-                $data = array('genre' => $genres[$key]);
-                $this->db->insert('genres', $data);
-                $this->db->select('genre_id');
-                $this->db->from('genres');
-                $this->db->where('genre', $genre[$i]);
-                $query = $this->db->get();
-                $result = $query->row;
-                $genres = array_reverse($genres, true);
-                $genres[$result['genre_id']] = $genres[$key];
-                $genres = array_reverse($genres, true);
-                unset ($genres[$key]);
-            }
-        }
-        foreach ($old_ids as $key => $old_id) {
-            if (isset($genres[0])) {
-                $data = array('genre_id' => $genres[0])
-                $this->db->where('genre_id', $old_id['genre_id'])
-                $this->db->update('book_genres', $data);
-                unset($genres[0]);
-            }
-            else {
-                $data = array('genre_id' => $old_id['genre_id']);
-                $this->db->delete('book_genres', $data);
             }
         }
         if ($genres) {
             foreach ($genres as $key => $genre) {
-                $this->db->insert($genre);
+                $data = array('book_id' => $id,
+                              'genre_id' => $key);
+                $this->db->insert('book_genres', $data);
             }
         }
-
+        return (1);
     }
 
     private function upd_author ($author, $id) {
+        //функция проверяет наличие автора в базе, добавляет его в базу если нужно
+        //удаляет автора которые больше нигде не используется
+        //обновляет ссылочную таблицу
+        //возвращает 0 если автор совпал с данными базы
+        //возвращает 2 если данные обновились
+        if(!$author or !$id){
+            return (0);
+        }
+        $author = $this->normal_name($author);
+        $query = $this->db->query("SELECT authors.author_id, authors.full_name
+                          FROM authors
+                          JOIN book_authors ON authors.author_id = book_authors.author_id
+                          WHERE book_id = $id");
 
+        $old_author = $query->result_array();
+        if ($old_author[0]['full_name'] == $author) {
+            return(0);
+        }
+        $this->db->select('author_id');
+        $this->db->from('authors');
+        $this->db->where('full_name', $author);
+        $query = $this->db->get();
+        $row = $query->row();
+        $result = $row->author_id;
+        if ($result){
+            $author = array($result, $author);
 
+        }
+        else {
+            $data = array('full_name' => $author);
+            $this->db->insert('authors', $data);
+            $this->db->select('author_id');
+            $this->db->from('authors');
+            $this->db->where('full_name', $author);
+            $query = $this->db->get();
+            $row = $query->row();
+            $result = $row->author_id;
+            $author = array($result, $author);
+        }
+        $data = array('author_id' => $author[0]);
+                $this->db->where('book_id', $id);
+                $this->db->update('book_authors', $data);
+
+        $this->db->select('book_id');
+        $this->db->from('book_authors');
+        $this->db->where('author_id', $old_author[0]['author_id']);
+        $query = $this->db->get();
+        $result = $query->result_array();
+        if (!$result) {
+            $data = array('author_id' => $old_author[0]['author_id']);
+            $this->db->delete('authors', $data);
+        }
+         return(2);
     }
 
 
@@ -266,26 +355,28 @@ class books_model extends CI_Model {
 
     private function chek_received_data ($genre, $author, $book, $year)  {
 
-
-            foreach ($genre as $string){
+        if ($genre) {
+            foreach ($genre as $string) {
                 if (!is_string($string)) {
                     return ("не верный формат введенных данных");
                 }
             }
+        }
 
+        if ($author and !is_string($author)){
+            return ("не верный формат введенных данных");
+        }
+        if ($book and !is_string($book)){
+            return ("не верный формат введенных данных");
+        }
+        if ($year and !is_int($year) and (strlen($year) <> 4)) {
+            return ("не верный формат года");
+        }
 
-            if (!is_string($author) or !is_string($book) or !is_int($year)) {
-                return ("не верный формат введенных данных");
-            }
-
-            if (strlen($year) <> 4) {
-                return ("не верный формат года");
-            }
-
-            if ($year > date('Y')) {
-                return ("год написания книги не может быть больше текущего");
-            }
-            return ('ok');
+        if ($year and ($year > date('Y'))) {
+            return ("год написания книги не может быть больше текущего");
+        }
+        return ('ok');
         }
 
 
@@ -490,68 +581,71 @@ class books_model extends CI_Model {
     }
 
 
-    private     function normal_genre($n){
+    private     function normal_genre($genres){
         //функция приводит строку к виду словосочетания или одного слова. То есть делит на отдельные слова, удаляет знаки
         //припинания и пробелы,первое слово пишет с большой буквы.
-        $n = preg_replace('/[^а-яёa-z\s]/iu', ' ', $n);
+        $resultarray = array();
+        foreach ($genres as $n) {
+            $n = preg_replace('/[^а-яёa-z\s]/iu', ' ', $n);
 
-        $n = mb_strtolower($n, 'UTF-8');
-
-
-        for ($i = 0, $arr = [], $size = strlen($n); $i < $size; $i++) {
-            $b = mb_substr($n, $i, 1, 'UTF-8');
-            if ($b == '') {
-            } else {
-                array_push($arr, $b);
-            }
-        }
+            $n = mb_strtolower($n, 'UTF-8');
 
 
-        $uper = true;
-        $del = true;
-        $result = [];
-        foreach ($arr as $liter) {
-            if ($liter == " ") {
-                //$uper = true;  если раскоментировать - каждое новое слово будет начинаться с бошьшой буквы
-                if ($del == false) {
-                    $del = true;
-                    array_push($result, $liter);
-                    //var_dump("пробел найден но не удален" . '"' . $liter . '"');
-                }
-                //var_dump("пробел найден И удален" . '"' . $liter . '"');
-            } else {
-                $del = false;
-                if ($uper == true) {
-                    $uper = false;
-                    array_push($result, mb_strtoupper($liter, 'UTF-8'));
-                    //var_dump("Буква сделана большой и помещена в моссив" . '"' . $liter . '"');
+            for ($i = 0, $arr = [], $size = strlen($n); $i < $size; $i++) {
+                $b = mb_substr($n, $i, 1, 'UTF-8');
+                if ($b == '') {
                 } else {
-                    array_push($result, $liter);
-                    //var_dump("просто помещена в массив как есть" . '"' . $liter . '"');
+                    array_push($arr, $b);
                 }
             }
-        }
 
-        $size = count($result);
-        $string = null;
-        if ($result[$size - 1] == ' ') {
-            array_pop($result);
-            //var_dump('выполняется c пробелом в конце строки');
-            foreach ($result as $liter) {
 
-                $string = $string . $liter;
-
+            $uper = true;
+            $del = true;
+            $result = [];
+            foreach ($arr as $liter) {
+                if ($liter == " ") {
+                    //$uper = true;  если раскоментировать - каждое новое слово будет начинаться с бошьшой буквы
+                    if ($del == false) {
+                        $del = true;
+                        array_push($result, $liter);
+                        //var_dump("пробел найден но не удален" . '"' . $liter . '"');
+                    }
+                    //var_dump("пробел найден И удален" . '"' . $liter . '"');
+                } else {
+                    $del = false;
+                    if ($uper == true) {
+                        $uper = false;
+                        array_push($result, mb_strtoupper($liter, 'UTF-8'));
+                        //var_dump("Буква сделана большой и помещена в моссив" . '"' . $liter . '"');
+                    } else {
+                        array_push($result, $liter);
+                        //var_dump("просто помещена в массив как есть" . '"' . $liter . '"');
+                    }
+                }
             }
-        } else {
-            //var_dump('выполняется без пробелоа  в конце строки');
-            foreach ($result as $liter) {
 
-                $string = $string . $liter;
+            $size = count($result);
+            $string = null;
+            if ($result[$size - 1] == ' ') {
+                array_pop($result);
+                //var_dump('выполняется c пробелом в конце строки');
+                foreach ($result as $liter) {
+
+                    $string = $string . $liter;
+
+                }
+            } else {
+                //var_dump('выполняется без пробелоа  в конце строки');
+                foreach ($result as $liter) {
+
+                    $string = $string . $liter;
+                }
             }
+            // $string = preg_replace('/[^а-яёa-z\s]/iu', '', $string);
+            $resultarray [] = $string;
         }
-        // $string = preg_replace('/[^а-яёa-z\s]/iu', '', $string);
-        return $string;
-
+        return ($resultarray);
     }
 
 

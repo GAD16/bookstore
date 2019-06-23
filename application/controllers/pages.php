@@ -25,8 +25,8 @@ class Pages extends CI_Controller {
 
 
 
-        $genres = array('Фантастика', 'роман');
-        $data['compare'] = $this->books_model->save_book ($genres, 'Сергей Лукьяненко', 'Лабиринт отражений', 1998);
+        $genres = array('Приключения', 'роман');
+        $data['compare'] = $this->books_model->upd_book ($genres, 'Сергей Георгиевич Лукьяненко', null, 2008, 7);
 
 
         $this->load->view('templates/header');

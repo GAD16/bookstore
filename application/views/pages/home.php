@@ -16,11 +16,11 @@ echo (count($lib));
 
 ?>
 <?php
-foreach ($authors as $column => $value) { ?>
-
-    <h3> <?php echo($value['author_id'] . $value['full_name'] . '<br>'); ?> </h3>
-
-<?php }
+//foreach ($authors as $column => $value) { ?>
+<!---->
+<!--    <h3> --><?php //echo($value['author_id'] . $value['full_name'] . '<br>'); ?><!-- </h3>-->
+<!---->
+<?php //}
 
 var_dump($compare);
 
