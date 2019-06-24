@@ -10,19 +10,7 @@ class books_model extends CI_Model {
         $this->load->database();
     }
 
-   public function get_authors ($id = false)   {
-
-        if ($id === false)    {
-
-            $query = $this->db->get('authors');
-            return $query->result_array();
-        }
-
-       $query = $this->db->get_where('authors', array('id' => $id));
-       return $query->row_array();
-   }
-
-   public function get_lib() {
+    public function get_lib() {
         //Выбирает жанр(через запятую если их несколько), автор, название, год
        $query = $this->db->query('
             SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year
@@ -33,7 +21,7 @@ class books_model extends CI_Model {
             JOIN authors ON authors.author_id = book_authors.author_id
             GROUP BY books.id');
 
-       return $query->result_array();
+       return $query;
 
     }
 

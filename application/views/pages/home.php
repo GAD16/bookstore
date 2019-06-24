@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Библиотека</title>
+    <link rel="stylesheet" href="pagestyles.css">
 </head>
 <body>
 <h1>Здесь будет база книжек</h1>
 <?php
-echo (count($lib));
-  foreach ($lib as $column => $value) { ?>
+echo ($lib);
+ ?>
 
-   <h3> <?php echo($value['genre'] . $value['author'] . $value['name'] . $value['year'] . '<br>'); ?> </h3>
 
-<?php }
+
+<?php
 
 ?>
 <?php
@@ -22,7 +23,7 @@ echo (count($lib));
 <!---->
 <?php //}
 
-var_dump($compare);
+
 
 
 

@@ -5,6 +5,7 @@ class Pages extends CI_Controller {
     {
         parent::__construct();
         $this->load->model('books_model');
+        $this->load->library('table');
     }
 
     /**
@@ -21,7 +22,8 @@ class Pages extends CI_Controller {
 
         $data['title'] = ucfirst($page); // Сделать первую букву заглавной
         //$data['authors'] = $this->books_model->get_authors();
-        $data['lib'] = $this->books_model->get_lib();
+        $books = $this->books_model->get_lib();
+        $data['lib'] = $this->table->generate($books);
 
 
 
