@@ -13,7 +13,7 @@ class books_model extends CI_Model {
     public function get_lib() {
         //Выбирает жанр(через запятую если их несколько), автор, название, год
        $query = $this->db->query('
-            SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year
+            SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year, id
             FROM books
             JOIN book_genres ON book_genres.book_id = books.id
             JOIN genres ON genres.genre_id = book_genres.genre_id

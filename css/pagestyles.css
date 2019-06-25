@@ -1,0 +1,10 @@
+
+.tableblock {width: 80%; margin: 0 auto;}
+table {width: 100%; border-collapse: collapse;}
+table thead tr {color: #ffffff; font-weight: bold; background: rgba(0, 133, 16, 0.56);}
+table thead tr td {border: 1px solid #01ab73;}
+table tbody tr td {border: 1px solid #e8e9eb;}
+table tbody tr td:last-child {font-size: 0pt; text-align: center;}
+table tbody tr:nth-child(2n) {background: #f4f4f4;}
+table tbody tr:hover {background: #ebffe8;}
+.x {width: 10px; height: 10px;}
