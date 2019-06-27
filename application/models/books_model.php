@@ -9,8 +9,35 @@ class books_model extends CI_Model {
 
         $this->load->database();
     }
+    public function table () {
+        $lib = $this->get_lib();
+        $result =('');
 
-    public function get_lib() {
+        $result .= '   <table border="0" cellpadding="4" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <td>Жанр</td><td>Автор</td><td>Название</td><td>Год издания</td><td>Удалить</td>
+                                 </tr>
+                             </thead>
+                             <tbody>';
+        foreach ($lib as $row) {
+            $result .= '<tr>';
+            foreach ($row as $fild => $cel) {
+                if ($fild == 'id'){
+                    $result .= "<td class = 'setID' data-id = '$cel'><img class = 'delButton' src='/img/x.png' alt='x'></td>";
+                }
+                else {
+                    $result .= "<td><div class = 'cell'>$cel</div></td>";
+                }
+            }
+            $result .= '</tr>';
+        }
+        $result .= '</tbody>
+                    </table>';
+        return ($result);
+    }
+
+    private function get_lib() {
         //Выбирает жанр(через запятую если их несколько), автор, название, год
        $query = $this->db->query('
             SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year, id
@@ -20,8 +47,9 @@ class books_model extends CI_Model {
             JOIN book_authors ON book_authors.book_id = books.id
             JOIN authors ON authors.author_id = book_authors.author_id
             GROUP BY books.id');
+       $result = $query->result_array();
 
-       return $query;
+       return $result;
 
     }
 
@@ -315,11 +343,7 @@ class books_model extends CI_Model {
     $check = $this->chek_received_data($genre, $author, $book, $year);
     if ($check == 'ok'){
         $g = array();
-        foreach ($genre as $elem){
-            $elem = $this->normal_genre($elem);
-            array_push($g, $elem);
-        }
-        $genre = $g;
+        $genre = $this->normal_genre($genre);
         $author = $this->normal_name($author);
         $book = $this->normal_book($book);
 
@@ -379,8 +403,8 @@ class books_model extends CI_Model {
             $query = $this->db->get();
             $row = $query->row();
 
-            $book_id = $row->id;
-            if ($book_id) {
+            if ($row) {
+                $book_id = $row->id;
                 array_push($cbr, $book_id);
             }
             else {
@@ -396,8 +420,9 @@ class books_model extends CI_Model {
                 $this->db->where('genre', $g);
                 $query = $this->db->get();
                 $row = $query->row();
-                $genre_id = $row->genre_id;
-                if ($genre_id) {
+
+                if ($row) {
+                    $genre_id = $row->genre_id;
                     array_push($g_ids, $genre_id);
                 } else {
                     array_push($g_ids, false);
@@ -412,8 +437,9 @@ class books_model extends CI_Model {
             $this->db->where('full_name', $author);
             $query = $this->db->get();
             $row = $query->row();
-            $author_id = $row->author_id;
-            if ($author_id){
+
+            if ($row){
+                $author_id = $row->author_id;
                 array_push($cbr, $author_id);
             }
             else {
