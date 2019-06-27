@@ -27,13 +27,13 @@ class Pages extends CI_Controller {
         $data['lib'] = $books;
 
         $data['style_css'] = array('/css/pagestyles.css');
-        $data['java_script'] = array('/js/jquery.min.js', '/js/homescript.js');
+        $data['java_script'] = array('/js/jquery.min.js', '/js/homescript.js', '/js/jquery.json.js');
 
 
 
 
-        $genres = array('фантастика', 'роман');
-        $data['compare'] = $this->books_model->save_book ($genres, 'Гари Гаррисон', 'Стальная крыса', 1969);
+        $genres = array('Мистика', 'интервью');
+        $data['compare'] = $this->books_model->save_book ($genres, 'Владимир Серкин', 'Хохот шамана', 2007);
 
 
         $this->load->view('templates/header');
