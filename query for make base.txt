@@ -1,0 +1,46 @@
+CREATE TABLE books (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  name varchar(255) DEFAULT NULL,
+  year decimal(10,0) DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE genres (
+  genre_id int(11) NOT NULL AUTO_INCREMENT,
+  name varchar(255) DEFAULT NULL,
+  PRIMARY KEY (genre_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE authors (
+  author_id int(11) NOT NULL AUTO_INCREMENT,
+  full_name varchar(255) DEFAULT NULL,
+  PRIMARY KEY (author_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE book_authors (
+  link_id int(11) NOT NULL AUTO_INCREMENT,
+  book_id int(11) DEFAULT NULL,
+  author_id int(11) DEFAULT NULL,
+  PRIMARY KEY (link_id),
+  KEY fk_auth_book_id (book_id),
+  KEY fk_auth_author_id (author_id),
+  CONSTRAINT fk_auth_author_id FOREIGN KEY (author_id) REFERENCES authors (author_id) ON DELETE CASCADE,
+  CONSTRAINT fk_auth_book_id FOREIGN KEY (book_id) REFERENCES books (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE book_genres (
+  link_id int(11) NOT NULL,
+  book_id int(255) DEFAULT NULL,
+  genre_id int(11) DEFAULT NULL,
+  PRIMARY KEY (link_id),
+  KEY fk_gen_book_id (book_id),
+  KEY fk_gen_genre_id (genre_id),
+  CONSTRAINT fk_gen_book_id FOREIGN KEY (book_id) REFERENCES books (id) ON DELETE CASCADE,
+  CONSTRAINT fk_gen_genre_id FOREIGN KEY (genre_id) REFERENCES genres (genre_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+
+?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC

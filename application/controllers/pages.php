@@ -36,23 +36,68 @@ class Pages extends CI_Controller {
         $data['compare'] = $this->books_model->save_book ($genres, 'Владимир Серкин', 'Хохот шамана', 2007);
 
 
-        $this->load->view('templates/header');
+        $this->load->view('templates/header', $data);
         $this->load->view('pages/'.$page, $data);
         $this->load->view('templates/footer');
 
     }
 
-       public function delButton () {
+
+    public function delButton () {
         $id = $_GET['id'];
         $result = $this->books_model->del_book($id);
         if ($result) {
             $lib = $this->books_model->table();
             echo ($lib);
         }
-            else {
-                echo ('');
-            }
+        else {
+            echo ('');
+    }
+  }
+    public function updateButton () {
+        $data = $_POST['data'];
+        $data = json_decode($data);
+        $result = $this->books_model->upd_book (
+            $data[0]->value,
+            $data[1]->value,
+            $data[2]->value,
+            (int)$data[3]->value,
+            $data[4]->value);
+        $r = $this->books_model->row_by_id($data[4]->value);
+        echo ($r);
+    }
 
-       }
+    public function addButton () {
+        $data = $_POST['data'];
+        $data = json_decode($data);
+        $result = '';
+        $result = $this->books_model->save_book (
+            $data[0]->value,
+            $data[1]->value,
+            $data[2]->value,
+            (int)$data[3]->value);
+        switch ($result) {
+            default: $result = $this->books_model->row_by_id($result);
+                echo ($result);
+                break;
+            case 'не все поля заполнены':
+                echo ($result);
+                break;
+            case 'такая книга уже добавлена':
+                echo ($result);
+                break;
+            case 'не верный формат введенных данных':
+                echo ($result);
+                break;
+            case 'не верный формат года':
+                echo ($result);
+                break;
+            case 'год написания книги не может быть больше текущего':
+                echo ($result);
+                break;
+
+        }
+
+    }
 
 }

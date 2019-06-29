@@ -9,6 +9,28 @@ class books_model extends CI_Model {
 
         $this->load->database();
     }
+    public function row_by_id ($id) {
+        $query = $this->db->query("
+            SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year, id
+            FROM books
+            JOIN book_genres ON book_genres.book_id = books.id
+            JOIN genres ON genres.genre_id = book_genres.genre_id
+            JOIN book_authors ON book_authors.book_id = books.id
+            JOIN authors ON authors.author_id = book_authors.author_id
+            WHERE books.id = $id
+            GROUP BY books.id");
+        $row = $query->row();
+        $result = ('');
+        foreach ($row as $fild => $cel) {
+            if ($fild == 'id'){
+                $result .= "<td class = 'setID' data-id = '$cel'><img class = 'delButton' src='/img/x.png' alt='x'></td>";
+            }
+            else {
+                $result .= "<td><div class = 'cell'>$cel</div></td>";
+            }
+        }
+        return ($result);
+    }
     public function table () {
         $lib = $this->get_lib();
         $result =('');
@@ -55,7 +77,7 @@ class books_model extends CI_Model {
 
     public function upd_book ($genres, $author, $book, $year, $id){
         //обновляет записи во всех таблицах
-        //если нет ID или нет всех данных возвращает 0
+        //если нет ID возвращает 0
         //при обновлении только жанров возвратит 1
         //при обновлении только авторов возвратит 2
         //при обновлении только книги или (и) года возвратит 4
@@ -68,6 +90,7 @@ class books_model extends CI_Model {
     if (!($chek == 'ok')) {
         return ($chek);
     }
+    $res = 0;
     if ($genres) {
         $res = $this->upd_genres($genres, $id);
     }
@@ -109,9 +132,7 @@ class books_model extends CI_Model {
                           WHERE book_genres.book_id = $id");
 
         $old_ids = $query->result_array();
-        //     foreach ($query->result_array() as $item) {
-        //        $old_ids = [$item['genre_id']] => $item ['genre'];
-        //     }
+        // сравнение новых и старых жанров. ключи совпадающих в массивах delkeys
         $oldDelKeys = array();
         $newDelKeys = array();
         foreach ($old_ids as $oldkey => $old_id) {
@@ -143,12 +164,12 @@ class books_model extends CI_Model {
             $this->db->where('genre', $genre);
             $query = $this->db->get();
             $row = $query->row();
-            $result = $row->genre_id;
-            if ($result){
+            if ($row){
+                $result = $row->genre_id;
                 $genres = array_reverse($genres, true);
                 $genres [$result] = $genres[$key];
                 $genres = array_reverse($genres, true);
-                unset ($genres[$key]);
+                array_splice($genres, $key,1);
             }
             else {
                 if ($old_ids[0]) {
@@ -223,10 +244,9 @@ class books_model extends CI_Model {
         $this->db->where('full_name', $author);
         $query = $this->db->get();
         $row = $query->row();
-        $result = $row->author_id;
-        if ($result){
+        if ($row){
+            $result = $row->author_id;
             $author = array($result, $author);
-
         }
         else {
             $data = array('full_name' => $author);
@@ -336,7 +356,7 @@ class books_model extends CI_Model {
     //добавляет запись в базу, если такой книги еще нет. Возвращает ID новой или уже существующей
     public function save_book ($genre, $author, $book, $year) {
 
-    if (!isset($genre) or !isset($author) or !isset($book) or !isset($year)) {
+    if ($genre=='' or $author=='' or $book=='' or $year==0) {
             return ("не все поля заполнены");
         }
 
@@ -367,21 +387,17 @@ class books_model extends CI_Model {
 
     private function chek_received_data ($genre, $author, $book, $year)  {
 
-        if ($genre) {
-            foreach ($genre as $string) {
-                if (!is_string($string)) {
-                    return ("не верный формат введенных данных");
-                }
-            }
+        if ($genre and intval($genre)<>0) {
+            return ("не верный формат введенных данных");
         }
 
-        if ($author and !is_string($author)){
+        if ($author and intval($genre)<>0){
             return ("не верный формат введенных данных");
         }
-        if ($book and !is_string($book)){
+        if ($book and intval($genre)<>0){
             return ("не верный формат введенных данных");
         }
-        if ($year and !is_int($year) and (strlen($year) <> 4)) {
+        if ($year and (!is_int($year) | (strlen($year) <> 4))) {
             return ("не верный формат года");
         }
 
@@ -595,9 +611,10 @@ class books_model extends CI_Model {
     }
 
 
-    private     function normal_genre($genres){
+    private function normal_genre($genres){
         //функция приводит строку к виду словосочетания или одного слова. То есть делит на отдельные слова, удаляет знаки
         //припинания и пробелы,первое слово пишет с большой буквы.
+        $genres = explode(",", $genres);
         $resultarray = array();
         foreach ($genres as $n) {
             $n = preg_replace('/[^а-яёa-z\s]/iu', ' ', $n);
