@@ -7,7 +7,7 @@ CREATE TABLE books (
 
 CREATE TABLE genres (
   genre_id int(11) NOT NULL AUTO_INCREMENT,
-  name varchar(255) DEFAULT NULL,
+  genre varchar(255) DEFAULT NULL,
   PRIMARY KEY (genre_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -10,6 +10,7 @@ class books_model extends CI_Model {
         $this->load->database();
     }
     public function row_by_id ($id) {
+        //Выбирает жанр(через запятую если их несколько), автор, название, год по полученому айди
         $query = $this->db->query("
             SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year, id
             FROM books
@@ -31,35 +32,7 @@ class books_model extends CI_Model {
         }
         return ($result);
     }
-    public function table () {
-        $lib = $this->get_lib();
-        $result =('');
-
-        $result .= '   <table border="0" cellpadding="4" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <td>Жанр</td><td>Автор</td><td>Название</td><td>Год издания</td><td>Удалить</td>
-                                 </tr>
-                             </thead>
-                             <tbody>';
-        foreach ($lib as $row) {
-            $result .= '<tr>';
-            foreach ($row as $fild => $cel) {
-                if ($fild == 'id'){
-                    $result .= "<td class = 'setID' data-id = '$cel'><img class = 'delButton' src='/img/x.png' alt='x'></td>";
-                }
-                else {
-                    $result .= "<td><div class = 'cell'>$cel</div></td>";
-                }
-            }
-            $result .= '</tr>';
-        }
-        $result .= '</tbody>
-                    </table>';
-        return ($result);
-    }
-
-    private function get_lib() {
+    public function get_lib() {
         //Выбирает жанр(через запятую если их несколько), автор, название, год
        $query = $this->db->query('
             SELECT GROUP_CONCAT(genres.genre) as genre, full_name AS author, name, year, id
@@ -283,10 +256,11 @@ class books_model extends CI_Model {
         //Если у автора книги нет других ссылок удалает и автора
         //Если у жанра нет других ссылок - удаляет и жанр
         //возвращает
-        // 0 - удалена только книга и ссылки;
+        // 4 - удалена только книга и ссылки;
         // 1 - удален автор
         // 2 - удален жанр
         // 3 - удален автор и жанр
+        // Сумма показателей если выполнено несколько действий
         // false -нет книги с таким ID
 
         $ret = 0;
@@ -342,12 +316,12 @@ class books_model extends CI_Model {
                 }
             }
             if ($flag = true) {
-                $ret = $ret + 2;
+                $ret .= 2;
             }
         }
         $arr = array('id' => $id);
         $this->db->delete('books', $arr);
-
+        $ret .= 4;
 
         return ( $ret);
     }
@@ -406,7 +380,6 @@ class books_model extends CI_Model {
         }
         return ('ok');
         }
-
 
     private function compare_base ($genre, $author, $book) {
         //Функция проверяет наличие полученных значений в базе. Если такие есть - возвращает их ID в массиве $CBR
@@ -542,10 +515,6 @@ class books_model extends CI_Model {
         return ($book_id);
     }
 
-
-
-
-
     private   function normal_name($n){
        //функция приводит строку к виду ФИО. То есть делит на отдельные слова, удаляет знаки припинания и пробелы,
         //каждое новое слово пишет с большой буквы.
@@ -609,7 +578,6 @@ class books_model extends CI_Model {
         return $string;
 
     }
-
 
     private function normal_genre($genres){
         //функция приводит строку к виду словосочетания или одного слова. То есть делит на отдельные слова, удаляет знаки
@@ -678,7 +646,6 @@ class books_model extends CI_Model {
         }
         return ($resultarray);
     }
-
 
     private     function normal_book($n){
         //функция удаляет из строки знаки припинания кроме точек и запятых.

@@ -11,7 +11,7 @@ function initPage () {
     });
 
 
-    $('tbody').on('click', '.delButton', function () { //Событие клика на красный крестик
+    $('.tableBlock').on('click', '.delButton', function () { //Событие клика на красный крестик
         var id = $(this).parent().attr('data-id');
         console.log(id);
         $.ajax({
@@ -19,17 +19,17 @@ function initPage () {
             url: "delButton",
             data: {id: id},
             success: function (data) {
-                if (data === '0') {
+                if (!data) {
                     alert('Ошибка. Не удалось удалить запись');
+                }
+                else {
 
-                } else {
-                    $('.tableBlock').html(data);
-
+                    $('[data-id='+id+']').parent().remove();
                 }
             }
         });
     });
-    $('tbody').on('click', '.cell', function () { //Событие клика по данным из таблицы
+    $('.tableBlock').on('click', '.cell', function () { //Событие клика по данным из таблицы
         $('.popup').fadeIn(800);
         $('.updateButton').css('display', 'inline');
         var row = $(this).parent().parent();
@@ -45,6 +45,7 @@ function initPage () {
         data = $(row).eq(3).text();
         $(inputs).eq(3).attr({'placeholder': data});
         var result = [];
+
         $('.updateButton').one('click', function () { //Клик по кнопке заменить данные
             $('.popup').fadeOut(800);
             $('.updateButton').hide(800);
@@ -62,17 +63,13 @@ function initPage () {
 
                     } else {
                         $('[data-id = ' + id + ']').parent().html(data);
-
                     }
                 }
             });
-
-            // console.log(result);
-            //  console.log(id);
         });
-
     });
-    $('.addBtnOnPage').click(function () {
+
+    $('.addBtnOnPage').click(function () { //заполняет плейсхолдеры формы при клике по кнопке добавить книгу
         $('.popup').fadeIn(800);
         $('.addButton').css('display', 'inline');
         var inputs = $('.inputBox').children();
@@ -120,9 +117,9 @@ function initPage () {
                             alert(data);
                             data = '';
                             break;
+                        }
                     }
-                }
+                });
             });
         });
-    });
-}
+    }

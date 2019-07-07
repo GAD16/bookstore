@@ -22,7 +22,31 @@
         </div>
         <div class = 'tableBlock'>
             <?php
-            echo ($lib);
+
+            $result =('');
+
+            $result .= '   <table border="0" cellpadding="4" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <td>Жанр</td><td>Автор</td><td>Название</td><td>Год издания</td><td>Удалить</td>
+                                 </tr>
+                             </thead>
+                             <tbody>';
+            foreach ($lib as $row) {
+                $result .= '<tr>';
+                foreach ($row as $fild => $cel) {
+                    if ($fild == 'id'){
+                        $result .= "<td class = 'setID' data-id = '$cel'><img class = 'delButton' src='/img/x.png' alt='x'></td>";
+                    }
+                    else {
+                        $result .= "<td><div class = 'cell'>$cel</div></td>";
+                    }
+                }
+                $result .= '</tr>';
+            }
+            $result .= '</tbody>
+                    </table>';
+            echo $result;
              ?>
         </div>
     </div>
